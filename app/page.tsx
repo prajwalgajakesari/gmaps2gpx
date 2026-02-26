@@ -16,11 +16,11 @@ import {
   Ruler,
   Waypoints,
   Loader2,
-  ToggleLeft,
-  ToggleRight,
   Terminal,
   ExternalLink,
   Github,
+  Pencil,
+  ChevronRight,
 } from "lucide-react";
 
 const MapPreview = dynamic(() => import("@/components/MapPreview"), {
@@ -35,15 +35,18 @@ const MapPreview = dynamic(() => import("@/components/MapPreview"), {
   ),
 });
 
-interface RouteResult {
-  gpx: string;
-  points: [number, number][];
-  waypoints: { lat: number; lng: number; name: string }[];
+interface RouteOption {
+  summary: string;
   distance: number;
   duration: number;
+  points: [number, number][];
+  waypoints: { lat: number; lng: number; name: string }[];
+  gpx: string;
+}
+
+interface ConvertResult {
   routeName: string;
-  alternatives?: { summary: string; distance: number; duration: number }[];
-  chosenIndex?: number;
+  routes: RouteOption[];
 }
 
 type TravelMode = "driving" | "walking" | "bicycling" | "transit" | "motorcycle";
@@ -70,10 +73,11 @@ function formatDuration(seconds: number): string {
 export default function Home() {
   const [url, setUrl] = useState("");
   const [mode, setMode] = useState<TravelMode>("motorcycle");
-  const [shortest, setShortest] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RouteResult | null>(null);
+  const [result, setResult] = useState<ConvertResult | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState(0);
+  const [studioLoading, setStudioLoading] = useState(false);
 
   const handleConvert = useCallback(async () => {
     if (!url.trim()) {
@@ -83,11 +87,12 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setSelectedRoute(0);
     try {
       const resp = await fetch("/api/convert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), mode, shortest }),
+        body: JSON.stringify({ url: url.trim(), mode }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Conversion failed");
@@ -97,18 +102,44 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [url, mode, shortest]);
+  }, [url, mode]);
+
+  const currentRoute = result?.routes[selectedRoute] ?? null;
 
   const handleDownload = useCallback(() => {
-    if (!result) return;
-    const blob = new Blob([result.gpx], { type: "application/gpx+xml" });
+    if (!currentRoute || !result) return;
+    const blob = new Blob([currentRoute.gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     const safeName = result.routeName.replace(/[^\w\s-]/g, "_").slice(0, 60);
     a.download = `${safeName}.gpx`;
     a.click();
     URL.revokeObjectURL(a.href);
-  }, [result]);
+  }, [currentRoute, result]);
+
+  const handleOpenStudio = useCallback(async () => {
+    if (!currentRoute) return;
+    setStudioLoading(true);
+    try {
+      // Store GPX on server temporarily
+      const resp = await fetch("/api/gpx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gpx: currentRoute.gpx }),
+      });
+      const { id } = await resp.json();
+
+      // Build gpx.studio URL with our serve endpoint
+      const gpxUrl = `${window.location.origin}/api/gpx?id=${id}`;
+      const state = JSON.stringify({ urls: [gpxUrl] });
+      const studioUrl = `https://gpx.studio/?state=${encodeURIComponent(state)}`;
+      window.open(studioUrl, "_blank");
+    } catch {
+      setError("Failed to open gpx.studio. Try downloading the file and importing it manually.");
+    } finally {
+      setStudioLoading(false);
+    }
+  }, [currentRoute]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f8fafc] relative">
@@ -189,57 +220,31 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Options ────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-end gap-6">
-          {/* Travel Mode */}
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
-              Travel Mode
-            </label>
-            <div className="flex gap-1 p-1 rounded-xl glass">
-              {MODES.map((m) => {
-                const Icon = m.icon;
-                const active = mode === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    onClick={() => setMode(m.value)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-                      active
-                        ? "bg-emerald-600/90 text-white shadow-md shadow-emerald-600/20"
-                        : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
-                    }`}
-                    title={m.label}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{m.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Shortest Toggle */}
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
-              Route Selection
-            </label>
-            <button
-              onClick={() => setShortest(!shortest)}
-              className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
-                shortest
-                  ? "glass text-emerald-400 border-emerald-500/20"
-                  : "glass text-zinc-500 hover:text-zinc-300"
-              }`}
-              style={shortest ? { background: "rgba(34, 197, 94, 0.08)", borderColor: "rgba(34, 197, 94, 0.15)" } : {}}
-            >
-              {shortest ? (
-                <ToggleRight className="w-5 h-5 text-emerald-400" />
-              ) : (
-                <ToggleLeft className="w-5 h-5" />
-              )}
-              Pick shortest route
-            </button>
+        {/* ── Travel Mode ──────────────────────────────────────── */}
+        <div className="space-y-2">
+          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+            Travel Mode
+          </label>
+          <div className="flex gap-1 p-1 rounded-xl glass w-fit">
+            {MODES.map((m) => {
+              const Icon = m.icon;
+              const active = mode === m.value;
+              return (
+                <button
+                  key={m.value}
+                  onClick={() => setMode(m.value)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    active
+                      ? "bg-emerald-600/90 text-white shadow-md shadow-emerald-600/20"
+                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+                  }`}
+                  title={m.label}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{m.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -252,14 +257,77 @@ export default function Home() {
         )}
 
         {/* ── Results ────────────────────────────────────────── */}
-        {result && (
+        {result && currentRoute && (
           <div className="space-y-5 animate-in">
+            {/* Route Picker — only when multiple routes */}
+            {result.routes.length > 1 && (
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Route className="w-3.5 h-3.5" />
+                  {result.routes.length} routes found — select one
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {result.routes.map((route, i) => {
+                    const isSelected = i === selectedRoute;
+                    const isShortest =
+                      route.distance ===
+                      Math.min(...result.routes.map((r) => r.distance));
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedRoute(i)}
+                        className={`glass rounded-xl px-4 py-3.5 text-left transition-all duration-200 cursor-pointer relative ${
+                          isSelected
+                            ? "ring-1 ring-emerald-500/30 bg-emerald-500/[0.06]"
+                            : "hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        {/* Radio indicator */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2.5 h-2.5 rounded-full shrink-0 border-2 transition-colors ${
+                                  isSelected
+                                    ? "bg-emerald-400 border-emerald-400"
+                                    : "border-zinc-600 bg-transparent"
+                                }`}
+                              />
+                              <span className="text-sm font-medium text-white truncate">
+                                {route.summary || `Route ${i + 1}`}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 mt-2 ml-[18px] text-xs text-zinc-500">
+                              <span className="flex items-center gap-1">
+                                <Ruler className="w-3 h-3" />
+                                {formatDistance(route.distance)}
+                              </span>
+                              <span className="text-zinc-700">·</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatDuration(route.duration)}
+                              </span>
+                            </div>
+                          </div>
+                          {isShortest && (
+                            <span className="text-[10px] font-semibold text-emerald-400/80 uppercase tracking-widest whitespace-nowrap mt-0.5">
+                              Shortest
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Stats Row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { icon: Ruler, label: "Distance", value: formatDistance(result.distance) },
-                { icon: Clock, label: "Duration", value: formatDuration(result.duration) },
-                { icon: Waypoints, label: "Points", value: result.points.length.toLocaleString() },
+                { icon: Ruler, label: "Distance", value: formatDistance(currentRoute.distance) },
+                { icon: Clock, label: "Duration", value: formatDuration(currentRoute.duration) },
+                { icon: Waypoints, label: "Points", value: currentRoute.points.length.toLocaleString() },
                 {
                   icon: MODES.find((m) => m.value === mode)?.icon || Car,
                   label: "Mode",
@@ -268,10 +336,7 @@ export default function Home() {
               ].map((stat) => {
                 const Icon = stat.icon;
                 return (
-                  <div
-                    key={stat.label}
-                    className="glass rounded-xl px-4 py-3.5"
-                  >
+                  <div key={stat.label} className="glass rounded-xl px-4 py-3.5">
                     <div className="flex items-center gap-2 text-zinc-500 mb-1">
                       <Icon className="w-3.5 h-3.5" />
                       <span className="text-[11px] font-semibold uppercase tracking-widest">
@@ -286,56 +351,49 @@ export default function Home() {
               })}
             </div>
 
-            {/* Download Bar */}
-            <div className="flex items-center justify-between glass rounded-xl px-5 py-3.5">
-              <div className="text-sm text-zinc-400 font-mono truncate mr-4">
+            {/* Action Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 glass rounded-xl px-5 py-4">
+              <div className="text-sm text-zinc-400 font-mono truncate">
                 {result.routeName}
+                {result.routes.length > 1 && (
+                  <span className="text-zinc-600 ml-2">
+                    via {currentRoute.summary}
+                  </span>
+                )}
               </div>
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-medium text-sm transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-600/10 hover:shadow-emerald-500/20 shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                Download GPX
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleOpenStudio}
+                  disabled={studioLoading}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass glass-hover text-sm font-medium text-zinc-300 hover:text-white transition-all duration-200 cursor-pointer disabled:opacity-40"
+                >
+                  {studioLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Pencil className="w-4 h-4" />
+                  )}
+                  Edit in gpx.studio
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-medium text-sm transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-600/10 hover:shadow-emerald-500/20"
+                >
+                  <Download className="w-4 h-4" />
+                  Download GPX
+                </button>
+              </div>
             </div>
-
-            {/* Alternatives */}
-            {result.alternatives && result.alternatives.length > 1 && (
-              <div className="glass rounded-xl px-5 py-4 space-y-2.5">
-                <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                  <Route className="w-3.5 h-3.5" />
-                  {result.alternatives.length} routes found — shortest selected
-                </div>
-                <div className="space-y-1">
-                  {result.alternatives.map((alt, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-3 text-xs py-1 ${
-                        i === result.chosenIndex
-                          ? "text-emerald-300 font-medium"
-                          : "text-zinc-600"
-                      }`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          i === result.chosenIndex ? "bg-emerald-400" : "bg-zinc-700"
-                        }`}
-                      />
-                      <span className="font-mono">{alt.summary}</span>
-                      <span className="text-zinc-600">·</span>
-                      <span>{formatDistance(alt.distance)}</span>
-                      <span className="text-zinc-600">·</span>
-                      <span>{formatDuration(alt.duration)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Map */}
             <div className="rounded-2xl overflow-hidden ring-1 ring-white/[0.06]">
-              <MapPreview points={result.points} waypoints={result.waypoints} />
+              <MapPreview
+                routes={result.routes.map((r) => ({
+                  points: r.points,
+                  waypoints: r.waypoints,
+                }))}
+                selectedIndex={selectedRoute}
+              />
             </div>
           </div>
         )}

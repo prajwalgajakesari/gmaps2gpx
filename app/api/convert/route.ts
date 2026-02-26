@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    // Validate URL looks like a Google Maps link
     if (
       !body.url.includes("google.com/maps") &&
       !body.url.includes("goo.gl") &&
@@ -24,7 +23,6 @@ export async function POST(request: NextRequest) {
     const result = await convertUrlToGpx({
       url: body.url,
       mode: body.mode || "driving",
-      shortest: body.shortest || false,
     });
 
     return NextResponse.json(result);

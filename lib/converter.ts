@@ -3,18 +3,20 @@
 export interface ConvertRequest {
   url: string;
   mode: "driving" | "walking" | "bicycling" | "transit" | "motorcycle";
-  shortest: boolean;
+}
+
+export interface RouteOption {
+  summary: string;
+  distance: number;
+  duration: number;
+  points: [number, number][];
+  waypoints: { lat: number; lng: number; name: string }[];
+  gpx: string;
 }
 
 export interface ConvertResult {
-  gpx: string;
-  points: [number, number][];
-  waypoints: { lat: number; lng: number; name: string }[];
-  distance: number;
-  duration: number;
   routeName: string;
-  alternatives?: { summary: string; distance: number; duration: number }[];
-  chosenIndex?: number;
+  routes: RouteOption[];
 }
 
 // ---------------------------------------------------------------------------
@@ -289,95 +291,64 @@ export async function convertUrlToGpx(req: ConvertRequest): Promise<ConvertResul
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("Server API key not configured");
 
-  // Step 1: Resolve & parse URL
   const resolvedUrl = await resolveShortUrl(req.url);
-  const route = parseGoogleMapsUrl(resolvedUrl);
+  const parsed = parseGoogleMapsUrl(resolvedUrl);
+  const routeName = `${parsed.origin} to ${parsed.destination}`;
 
-  // Step 2: Get directions
   const data = await getDirections(
-    route.origin,
-    route.destination,
-    route.waypoints,
+    parsed.origin,
+    parsed.destination,
+    parsed.waypoints,
     apiKey,
     req.mode,
-    req.shortest
+    true // always request alternatives
   );
 
-  // Step 3: Pick route
-  const routes = data.routes;
-  let chosenIndex = 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let alternatives: any[] | undefined;
-
-  if (req.shortest && routes.length > 1) {
-    alternatives = routes.map(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (r: any, i: number) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = r.legs.reduce((s: number, l: any) => s + l.distance.value, 0);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const t = r.legs.reduce((s: number, l: any) => s + l.duration.value, 0);
-        return { index: i, summary: r.summary || `Route ${i + 1}`, distance: d, duration: t };
-      }
-    );
-    chosenIndex = alternatives!.reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (minIdx: number, alt: any, idx: number) =>
-        alt.distance < alternatives![minIdx].distance ? idx : minIdx,
-      0
-    );
-  }
-
-  const chosen = routes[chosenIndex];
-
-  // Step 4: Decode polylines
-  const allPoints: [number, number][] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const legs: any[] = [];
-  let totalDistance = 0;
-  let totalDuration = 0;
+  const routes: RouteOption[] = [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const leg of chosen.legs) {
-    legs.push(leg);
-    totalDistance += leg.distance.value;
-    totalDuration += leg.duration.value;
+  for (let i = 0; i < data.routes.length; i++) {
+    const route = data.routes[i];
+    const points: [number, number][] = [];
+    const waypoints: RouteOption["waypoints"] = [];
+    let distance = 0;
+    let duration = 0;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const step of leg.steps) {
-      const pts = decodePolyline(step.polyline.points);
-      allPoints.push(...pts);
+    for (const leg of route.legs) {
+      distance += leg.distance.value;
+      duration += leg.duration.value;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const step of leg.steps) {
+        points.push(...decodePolyline(step.polyline.points));
+      }
     }
-  }
 
-  // Step 5: Build waypoint markers
-  const waypoints: ConvertResult["waypoints"] = [];
-  if (legs.length) {
-    waypoints.push({
-      lat: legs[0].start_location.lat,
-      lng: legs[0].start_location.lng,
-      name: legs[0].start_address || "Start",
-    });
-    for (let i = 0; i < legs.length; i++) {
+    if (route.legs.length) {
       waypoints.push({
-        lat: legs[i].end_location.lat,
-        lng: legs[i].end_location.lng,
-        name: legs[i].end_address || `Stop ${i + 1}`,
+        lat: route.legs[0].start_location.lat,
+        lng: route.legs[0].start_location.lng,
+        name: route.legs[0].start_address || "Start",
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const leg of route.legs) {
+        waypoints.push({
+          lat: leg.end_location.lat,
+          lng: leg.end_location.lng,
+          name: leg.end_address || "End",
+        });
+      }
     }
+
+    routes.push({
+      summary: route.summary || `Route ${i + 1}`,
+      distance,
+      duration,
+      points,
+      waypoints,
+      gpx: buildGpx(points, routeName, route.legs),
+    });
   }
 
-  // Step 6: Build GPX
-  const routeName = `${route.origin} to ${route.destination}`;
-  const gpx = buildGpx(allPoints, routeName, legs);
-
-  return {
-    gpx,
-    points: allPoints,
-    waypoints,
-    distance: totalDistance,
-    duration: totalDuration,
-    routeName,
-    alternatives,
-    chosenIndex: req.shortest ? chosenIndex : undefined,
-  };
+  return { routeName, routes };
 }
