@@ -129,10 +129,9 @@ export default function Home() {
       });
       const { id } = await resp.json();
 
-      // Build gpx.studio URL with our serve endpoint
+      // gpx.studio /app route reads a "files" query param: JSON array of URLs
       const gpxUrl = `${window.location.origin}/api/gpx?id=${id}`;
-      const state = JSON.stringify({ urls: [gpxUrl] });
-      const studioUrl = `https://gpx.studio/?state=${encodeURIComponent(state)}`;
+      const studioUrl = `https://gpx.studio/app?files=${encodeURIComponent(JSON.stringify([gpxUrl]))}`;
       window.open(studioUrl, "_blank");
     } catch {
       setError("Failed to open gpx.studio. Try downloading the file and importing it manually.");
