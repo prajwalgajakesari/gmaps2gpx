@@ -21,6 +21,15 @@ import {
   Github,
   Pencil,
   ChevronRight,
+  Link,
+  Zap,
+  Shield,
+  Globe,
+  ChevronDown,
+  Monitor,
+  Smartphone,
+  Watch,
+  Navigation,
 } from "lucide-react";
 
 const MapPreview = dynamic(() => import("@/components/MapPreview"), {
@@ -172,7 +181,7 @@ export default function Home() {
               <Route className="w-4 h-4 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-base font-semibold tracking-tight">gmaps2gpx</h1>
+              <span className="text-base font-semibold tracking-tight">gmaps2gpx</span>
               <p className="text-xs text-zinc-500 leading-none mt-0.5">
                 Google Maps to GPX
               </p>
@@ -202,6 +211,8 @@ export default function Home() {
       </header>
 
       <main className="relative z-10 max-w-5xl mx-auto px-6 py-10 space-y-8">
+        <h1 className="sr-only">Convert Google Maps Routes to GPX Files — Free Online Converter</h1>
+
         {/* ── URL Input ──────────────────────────────────────── */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
@@ -440,6 +451,242 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* ── SEO Content Sections ──────────────────────────────── */}
+      <div className="relative z-10 max-w-5xl mx-auto px-6 mt-24 space-y-20">
+
+        {/* How It Works */}
+        <section>
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+            How to Convert Google Maps to GPX
+          </h2>
+          <p className="text-sm text-zinc-500 mb-8 max-w-2xl">
+            Convert any Google Maps directions URL to a GPX file in three simple steps. No signup, no software to install.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                step: "1",
+                icon: Link,
+                title: "Copy your Google Maps URL",
+                desc: "Create your route in Google Maps with origin, destination, and any stops. Click Share and copy the link. Shortened links (maps.app.goo.gl) work too.",
+              },
+              {
+                step: "2",
+                icon: Zap,
+                title: "Paste and convert",
+                desc: "Paste the URL above, choose your travel mode (driving, cycling, walking, motorcycle, or transit), and click Convert. Select from alternative routes if available.",
+              },
+              {
+                step: "3",
+                icon: Download,
+                title: "Download or edit",
+                desc: "Download the GPX file to import into your Garmin, Wahoo, or any GPS device. Or click Edit in gpx.studio to fine-tune the route before saving.",
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.step} className="glass rounded-xl p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm font-bold">
+                      {item.step}
+                    </div>
+                    <Icon className="w-4 h-4 text-zinc-500" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                  <p className="text-xs text-zinc-500 leading-relaxed">{item.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Features */}
+        <section>
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+            Why Choose gmaps2gpx
+          </h2>
+          <p className="text-sm text-zinc-500 mb-8 max-w-2xl">
+            A modern, free Google Maps to GPX converter built for GPS enthusiasts, cyclists, hikers, and motorcycle tourers.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { icon: Route, title: "All travel modes", desc: "Driving, cycling, walking, transit, and motorcycle/two-wheeler routing via Google Routes API." },
+              { icon: MapPin, title: "Dragged routes preserved", desc: "Via-points from dragged routes are automatically extracted and included in the GPX file." },
+              { icon: Globe, title: "Shortened URL support", desc: "Paste maps.app.goo.gl links directly. The tool automatically resolves shortened URLs." },
+              { icon: Waypoints, title: "Alternative route selection", desc: "When Google finds multiple routes, preview each one on the map and pick the one you want." },
+              { icon: Pencil, title: "One-click gpx.studio editing", desc: "Open your GPX directly in gpx.studio to add elevation data, split tracks, or adjust waypoints." },
+              { icon: Shield, title: "Privacy-first", desc: "No route data is stored on the server. No account required. No tracking. 100% free." },
+              { icon: Terminal, title: "CLI tool available", desc: "Install via pip install gmaps2gpx for batch conversion, scripting, and automation." },
+              { icon: Motorbike, title: "Motorcycle mode", desc: "Two-wheeler routing via Google Routes API — especially useful in India and Southeast Asia." },
+              { icon: Download, title: "GPX 1.1 standard", desc: "Universal GPS format compatible with all devices: Garmin, Wahoo, Bryton, Suunto, and all GPS apps." },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="glass rounded-xl px-4 py-3.5 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4 text-emerald-400/70" />
+                    <h3 className="text-sm font-medium text-white">{item.title}</h3>
+                  </div>
+                  <p className="text-xs text-zinc-500 leading-relaxed">{item.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Compatible Devices & Apps */}
+        <section>
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+            Compatible GPS Devices and Apps
+          </h2>
+          <p className="text-sm text-zinc-500 mb-8 max-w-2xl">
+            GPX is the universal GPS exchange format. Files from gmaps2gpx work with every major GPS device and navigation app.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glass rounded-xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-zinc-400">
+                <Navigation className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-white">GPS Devices</h3>
+              </div>
+              <ul className="text-xs text-zinc-500 space-y-1.5">
+                <li>Garmin Edge, Fenix, Forerunner, Zumo</li>
+                <li>Wahoo ELEMNT, ROAM, BOLT</li>
+                <li>Bryton Rider, Aero</li>
+                <li>Suunto, Polar, COROS</li>
+                <li>TomTom, Lezyne</li>
+              </ul>
+            </div>
+            <div className="glass rounded-xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-zinc-400">
+                <Smartphone className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-white">Mobile Apps</h3>
+              </div>
+              <ul className="text-xs text-zinc-500 space-y-1.5">
+                <li>Strava</li>
+                <li>Komoot</li>
+                <li>AllTrails</li>
+                <li>OsmAnd</li>
+                <li>Gaia GPS, Wikiloc</li>
+              </ul>
+            </div>
+            <div className="glass rounded-xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-zinc-400">
+                <Monitor className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-white">Desktop & Web</h3>
+              </div>
+              <ul className="text-xs text-zinc-500 space-y-1.5">
+                <li>Garmin Connect</li>
+                <li>Ride with GPS</li>
+                <li>Google Earth</li>
+                <li>gpx.studio</li>
+                <li>Garmin BaseCamp</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section>
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-sm text-zinc-500 mb-8 max-w-2xl">
+            Everything you need to know about converting Google Maps routes to GPX files.
+          </p>
+          <div className="space-y-2">
+            {[
+              {
+                q: "Can I export a Google Maps route as a GPX file?",
+                a: "Yes. Google Maps does not natively export GPX files, but gmaps2gpx converts any Google Maps directions URL into a standard GPX 1.1 file. Just copy the URL from Google Maps, paste it into gmaps2gpx, and download the GPX file. It works with shortened links, dragged routes, and via-points.",
+              },
+              {
+                q: "How do I convert Google Maps directions to GPX?",
+                a: "Open Google Maps, create your route, click Share, and copy the link. Then go to gmaps2gpx, paste the URL, choose your travel mode (driving, cycling, walking, motorcycle, or transit), and click Convert. You can preview the route on the map, select from alternative routes, and download the GPX file.",
+              },
+              {
+                q: "How do I export a Google Maps route to my Garmin?",
+                a: "Convert your Google Maps route to GPX using gmaps2gpx, then import the GPX file into Garmin Connect (web or app). From Garmin Connect, send the course to your Garmin device. This works with all Garmin devices including Edge cycling computers, Fenix watches, and Zumo motorcycle GPS units.",
+              },
+              {
+                q: "What is the best Google Maps to GPX converter?",
+                a: "gmaps2gpx is a free, modern Google Maps to GPX converter that supports all travel modes including motorcycle/two-wheeler routing, alternative route selection with map preview, shortened URLs, dragged routes, and one-click editing in gpx.studio. It is also available as a CLI tool (pip install gmaps2gpx) for batch conversion.",
+              },
+              {
+                q: "Does the GPX file include elevation data?",
+                a: "The GPX file includes precise GPS coordinates for every point along the route. For full elevation profiles, you can open the GPX file in gpx.studio (one-click from gmaps2gpx) which automatically adds elevation data from SRTM datasets.",
+              },
+              {
+                q: "Does Google Maps support GPX files?",
+                a: "Google Maps does not natively import or export GPX files. However, you can convert Google Maps routes to GPX using gmaps2gpx, and import GPX files into Google My Maps by uploading them as a new layer.",
+              },
+              {
+                q: "Is gmaps2gpx free to use?",
+                a: "Yes, gmaps2gpx is 100% free with no hidden fees, no signup required, and no usage limits. Both the web app and the CLI tool (pip install gmaps2gpx) are completely free and open source.",
+              },
+              {
+                q: "Can I convert shortened Google Maps links?",
+                a: "Yes. gmaps2gpx automatically resolves shortened Google Maps links (maps.app.goo.gl format). Just paste the shortened URL directly — no need to expand it first.",
+              },
+              {
+                q: "Does gmaps2gpx support motorcycle routing?",
+                a: "Yes. gmaps2gpx supports motorcycle/two-wheeler routing via the Google Routes API. This is especially useful in India and Southeast Asia where two-wheeler routes differ significantly from car routes. Select the Motorcycle mode before converting.",
+              },
+              {
+                q: "What is the difference between GPX and KML?",
+                a: "GPX (GPS Exchange Format) is the standard for GPS devices and fitness apps like Garmin, Wahoo, Strava, and Komoot. KML (Keyhole Markup Language) is Google's format for Google Earth and Google My Maps. GPX is more widely supported by GPS hardware, while KML is better for Google products. gmaps2gpx outputs GPX 1.1, the most compatible format.",
+              },
+              {
+                q: "What GPS devices are compatible with GPX files?",
+                a: "GPX is a universal format supported by virtually all GPS devices and apps: Garmin (Edge, Fenix, Forerunner, Zumo), Wahoo (ELEMNT, ROAM, BOLT), Bryton, Suunto, Polar, COROS, Strava, Komoot, AllTrails, OsmAnd, Ride with GPS, Wikiloc, Gaia GPS, Google Earth, and many more.",
+              },
+              {
+                q: "Is my route data stored on the server?",
+                a: "No. gmaps2gpx processes your route in real-time and does not store any route data, URLs, or personal information on the server. Your privacy is fully protected.",
+              },
+            ].map((item, i) => (
+              <details
+                key={i}
+                className="glass rounded-xl group"
+              >
+                <summary className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none text-sm font-medium text-zinc-200 hover:text-white transition-colors">
+                  <span>{item.q}</span>
+                  <ChevronDown className="w-4 h-4 text-zinc-600 shrink-0 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="px-5 pb-4 text-sm text-zinc-500 leading-relaxed border-t border-white/[0.04] pt-3">
+                  {item.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* Why Convert */}
+        <section>
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+            Why Convert Google Maps to GPX?
+          </h2>
+          <p className="text-sm text-zinc-500 leading-relaxed max-w-3xl">
+            Google Maps is great for planning routes, but it doesn't export to GPX — the universal format used by GPS devices and fitness apps. Whether you're planning a cycling route on your Garmin Edge, a hiking trail for AllTrails, a motorcycle tour for your Zumo, or a running course for Strava, you need a GPX file. gmaps2gpx bridges the gap: plan your route in Google Maps where it's easiest, then convert to GPX for turn-by-turn navigation on your device.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+            {[
+              { icon: Bike, label: "Cycling" },
+              { icon: PersonStanding, label: "Hiking" },
+              { icon: Motorbike, label: "Motorcycle touring" },
+              { icon: Car, label: "Road trips" },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="glass rounded-xl px-4 py-3 flex items-center gap-2.5">
+                  <Icon className="w-4 h-4 text-emerald-400/60" />
+                  <span className="text-xs text-zinc-400 font-medium">{item.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-white/[0.04] mt-20">
