@@ -118,19 +118,39 @@ export default function Home() {
   }, [currentRoute, result]);
 
   const handleOpenStudio = useCallback(async () => {
-    if (!currentRoute) return;
+    if (!currentRoute || !result) return;
     setStudioLoading(true);
     try {
-      // Store GPX on server temporarily
-      const resp = await fetch("/api/gpx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gpx: currentRoute.gpx }),
-      });
-      const { id } = await resp.json();
+      // Gzip compress the GPX using browser's CompressionStream API
+      const blob = new Blob([currentRoute.gpx]);
+      const compressed = await new Response(
+        blob.stream().pipeThrough(new CompressionStream("gzip"))
+      ).arrayBuffer();
 
-      // gpx.studio /app route reads a "files" query param: JSON array of URLs
-      const gpxUrl = `${window.location.origin}/api/gpx?id=${id}`;
+      // Base64url encode (URL-safe, no padding)
+      const bytes = new Uint8Array(compressed);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const b64url = btoa(binary)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+
+      // GPX data is embedded in the URL itself — no server-side storage needed.
+      // Our /api/gpx endpoint decodes the z param and serves raw GPX with CORS.
+      const gpxUrl = `${window.location.origin}/api/gpx?z=${b64url}`;
+
+      // For very long routes (>2000 points), the URL may exceed server limits.
+      // Fall back to download + manual import in gpx.studio.
+      if (gpxUrl.length > 12000) {
+        handleDownload();
+        window.open("https://gpx.studio/app", "_blank");
+        setError("Route too long to open directly. GPX downloaded — drag it into gpx.studio.");
+        return;
+      }
+
       const studioUrl = `https://gpx.studio/app?files=${encodeURIComponent(JSON.stringify([gpxUrl]))}`;
       window.open(studioUrl, "_blank");
     } catch {
@@ -138,7 +158,7 @@ export default function Home() {
     } finally {
       setStudioLoading(false);
     }
-  }, [currentRoute]);
+  }, [currentRoute, result, handleDownload]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f8fafc] relative">

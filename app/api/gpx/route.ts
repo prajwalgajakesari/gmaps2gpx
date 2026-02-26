@@ -1,60 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// In-memory store for temporary GPX files (shared within same serverless instance)
-const store = new Map<string, { gpx: string; expires: number }>();
-
-function cleanup() {
-  const now = Date.now();
-  for (const [key, val] of store) {
-    if (val.expires < now) store.delete(key);
-  }
-}
-
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// Store GPX content, return an ID
-export async function POST(request: NextRequest) {
-  cleanup();
-  const { gpx } = await request.json();
-  if (!gpx) {
-    return NextResponse.json({ error: "Missing gpx" }, { status: 400 });
-  }
-  const id = crypto.randomUUID();
-  store.set(id, { gpx, expires: Date.now() + 10 * 60 * 1000 }); // 10 min TTL
-  return NextResponse.json({ id }, { headers: CORS_HEADERS });
-}
-
-// Serve GPX by ID (gpx.studio fetches this)
+// Serve GPX from compressed base64url data in the "z" query param.
+// No server-side state — the GPX content travels through the URL itself.
 export async function GET(request: NextRequest) {
-  cleanup();
-  const id = request.nextUrl.searchParams.get("id");
-  if (!id) {
-    return new NextResponse("Missing id parameter", {
+  const z = request.nextUrl.searchParams.get("z");
+  if (!z) {
+    return new NextResponse("Missing z parameter", {
       status: 400,
       headers: CORS_HEADERS,
     });
   }
 
-  const entry = store.get(id);
-  if (!entry) {
-    return new NextResponse("GPX not found or expired. Please convert again.", {
-      status: 404,
+  try {
+    // base64url → base64
+    let base64 = z.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) base64 += "=";
+
+    // Decode base64 → binary
+    const compressed = Buffer.from(base64, "base64");
+
+    // Decompress gzip → GPX XML
+    const ds = new DecompressionStream("gzip");
+    const stream = new Blob([compressed]).stream().pipeThrough(ds);
+    const gpx = await new Response(stream).text();
+
+    return new NextResponse(gpx, {
+      headers: {
+        "Content-Type": "application/gpx+xml",
+        "Content-Disposition": 'attachment; filename="route.gpx"',
+        "Cache-Control": "public, max-age=3600",
+        ...CORS_HEADERS,
+      },
+    });
+  } catch {
+    return new NextResponse("Failed to decode GPX data", {
+      status: 400,
       headers: CORS_HEADERS,
     });
   }
-
-  return new NextResponse(entry.gpx, {
-    headers: {
-      "Content-Type": "application/gpx+xml",
-      "Content-Disposition": 'attachment; filename="route.gpx"',
-      "Cache-Control": "public, max-age=600",
-      ...CORS_HEADERS,
-    },
-  });
 }
 
 // CORS preflight
