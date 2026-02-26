@@ -690,23 +690,32 @@ export default function Home() {
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-white/[0.04] mt-20">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-zinc-600">
-            Built by{" "}
-            <span className="text-zinc-500">Prajwal P</span>
-          </p>
-          <div className="flex items-center gap-4 text-xs text-zinc-700">
-            <span>Routes via Google Maps API</span>
-            <span className="text-zinc-800">·</span>
-            <span>Map tiles by OpenStreetMap</span>
-            <a
-              href="https://pypi.org/project/gmaps2gpx/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-zinc-500 hover:text-zinc-300 transition-colors duration-200 cursor-pointer flex items-center gap-1"
-            >
-              PyPI <ExternalLink className="w-3 h-3" />
-            </a>
+        <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+            <span className="text-zinc-600 font-medium">Guides:</span>
+            <a href="/how-to-convert-google-maps-to-gpx" className="text-zinc-500 hover:text-zinc-300 transition-colors">How to convert Google Maps to GPX</a>
+            <a href="/google-maps-to-garmin" className="text-zinc-500 hover:text-zinc-300 transition-colors">Google Maps to Garmin</a>
+            <a href="/google-maps-to-wahoo" className="text-zinc-500 hover:text-zinc-300 transition-colors">Google Maps to Wahoo</a>
+            <a href="/gpx-vs-kml" className="text-zinc-500 hover:text-zinc-300 transition-colors">GPX vs KML</a>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-zinc-600">
+              Built by{" "}
+              <span className="text-zinc-500">Prajwal P</span>
+            </p>
+            <div className="flex items-center gap-4 text-xs text-zinc-700">
+              <span>Routes via Google Maps API</span>
+              <span className="text-zinc-800">·</span>
+              <span>Map tiles by OpenStreetMap</span>
+              <a
+                href="https://pypi.org/project/gmaps2gpx/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-500 hover:text-zinc-300 transition-colors duration-200 cursor-pointer flex items-center gap-1"
+              >
+                PyPI <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         </div>
       </footer>
