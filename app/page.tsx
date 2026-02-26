@@ -139,7 +139,7 @@ export default function Home() {
               pip install gmaps2gpx
             </a>
             <a
-              href="https://github.com/prajwalp/gmaps2gpx"
+              href="https://github.com/prajwalgajakesari/gmaps2gpx-cli"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg glass glass-hover text-zinc-400 hover:text-zinc-200 transition-colors duration-200 cursor-pointer"
